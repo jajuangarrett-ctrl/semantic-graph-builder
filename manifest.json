@@ -1,0 +1,10 @@
+{
+  "id": "semantic-graph-builder",
+  "name": "Semantic Graph Builder",
+  "version": "0.1.0",
+  "minAppVersion": "1.4.0",
+  "description": "Suggest and insert approved semantic note links as native Obsidian wikilinks.",
+  "author": "Franklin Garrett",
+  "authorUrl": "",
+  "isDesktopOnly": false
+}
