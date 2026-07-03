@@ -131,7 +131,7 @@ export function renderSemanticLinksBlock(links: SemanticLinkEntry[]): string {
   return [
     SEMANTIC_LINKS_START,
     "",
-    "Related Notes",
+    "### Related Notes",
     "",
     ...linkLines,
     "",

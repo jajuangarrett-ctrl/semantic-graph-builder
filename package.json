@@ -1,6 +1,6 @@
 {
   "name": "semantic-graph-builder",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Suggest and insert approved semantic note links as native Obsidian wikilinks.",
   "main": "main.js",
   "scripts": {

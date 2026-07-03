@@ -11,11 +11,14 @@ describe("prepareSemanticLinksUpdate", () => {
     expect(result.existingBlockFound).toBe(false);
     expect(result.addedLinks).toHaveLength(1);
     expect(result.updatedContent).toContain("<!-- semantic-links:start -->");
-    expect(result.updatedContent).toContain("Related Notes");
+    expect(result.updatedContent).toContain("### Related Notes");
     expect(result.updatedContent).toContain(
       "* [[Programs/Student Equity|Student Equity]]"
     );
     expect(result.updatedContent).toContain("<!-- semantic-links:end -->");
+    expect(result.updatedContent).toContain(
+      "Body text.\n\n<!-- semantic-links:start -->"
+    );
   });
 
   it("updates an existing semantic links block instead of creating another one", () => {
@@ -44,13 +47,15 @@ describe("prepareSemanticLinksUpdate", () => {
     expect(result.updatedContent).toContain(
       "* [[Programs/Basic Needs|Basic Needs]]"
     );
+    expect(result.updatedContent).toContain("### Related Notes");
+    expect(result.updatedContent).not.toContain("\nRelated Notes\n");
   });
 
   it("does not duplicate a link that already exists in the semantic links block", () => {
     const content = [
       "<!-- semantic-links:start -->",
       "",
-      "Related Notes",
+      "### Related Notes",
       "",
       "* [[Programs/Student Equity|Student Equity]]",
       "",
@@ -88,7 +93,7 @@ describe("prepareSemanticLinksUpdate", () => {
       "",
       "<!-- semantic-links:start -->",
       "",
-      "Related Notes",
+      "### Related Notes",
     ].join("\n");
     const result = prepareSemanticLinksUpdate(content, [
       suggestion("Programs/Student Equity.md", "Student Equity"),
