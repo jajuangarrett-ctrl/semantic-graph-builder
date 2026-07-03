@@ -61,9 +61,14 @@
 }
 
 .semantic-links-view__selected-count,
-.semantic-links-view__empty {
+.semantic-links-view__empty,
+.semantic-links-view__provider {
   color: var(--text-muted);
   font-size: var(--font-ui-small);
+}
+
+.semantic-links-view__provider {
+  margin-bottom: 8px;
 }
 
 .semantic-links-suggestions-list {
@@ -119,6 +124,7 @@
 }
 
 .semantic-links-suggestion__path,
+.semantic-links-suggestion__provider,
 .semantic-links-suggestion__terms {
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);

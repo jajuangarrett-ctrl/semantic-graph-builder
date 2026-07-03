@@ -38,6 +38,7 @@ describe("SuggestionEngine", () => {
       maximumSuggestionsPerNote: 2,
       excludedFolders: [],
       requirePreviewBeforeInsert: true,
+      suggestionProvider: "local",
     };
     const engine = new SuggestionEngine(settings);
     const active = note(
@@ -58,6 +59,9 @@ describe("SuggestionEngine", () => {
       "Programs/Retention Coaching.md",
       "Programs/Basic Needs.md",
     ]);
+    expect(suggestions.every((suggestion) => suggestion.provider === "local")).toBe(
+      true
+    );
   });
 });
 

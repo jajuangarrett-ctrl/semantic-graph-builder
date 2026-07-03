@@ -31,6 +31,7 @@ export class SuggestionEngine {
           path: note.path,
           score: result.score,
           sharedTerms: result.sharedTerms,
+          provider: "local" as const,
           selected: false,
         };
       })

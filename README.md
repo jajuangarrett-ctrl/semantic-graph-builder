@@ -4,7 +4,7 @@ Semantic Graph Builder is an Obsidian plugin for turning approved note relations
 
 ## Current Status
 
-MVP complete.
+MVP complete. Version `0.2.0` adds an optional Smart Connections-backed suggestion provider.
 
 Implemented:
 
@@ -23,14 +23,22 @@ Implemented:
 - Insert Selected Links control
 - Preview modal confirmation
 - Confirmed note writing through the semantic-links block
+- Suggestion provider setting
+- Smart Connections semantic suggestions when Smart Connections is installed and indexed
+- Local keyword-overlap fallback when Smart Connections is unavailable or returns no usable suggestions
 
 Not implemented yet:
 
-- Smart Connections integration
-- OpenAI or local embeddings
+- First-party OpenAI or local embeddings inside this plugin
 - AI-generated relationship explanations
 - reciprocal links
 - batch vault review queue
+
+## Suggestion Providers
+
+The default provider is `Smart Connections, fallback to local`. Semantic Graph Builder does not copy or modify Smart Connections; it reads available Smart Connections relationship results at runtime, then keeps its own safe preview-and-insert workflow for writing native `[[wikilinks]]`.
+
+If Smart Connections is not installed, not enabled, or has not indexed the active note, the plugin falls back to local keyword overlap.
 
 ## Development
 

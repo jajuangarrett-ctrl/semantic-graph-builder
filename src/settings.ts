@@ -8,6 +8,7 @@ export const DEFAULT_SETTINGS: SemanticGraphBuilderSettings = {
   maximumSuggestionsPerNote: 5,
   excludedFolders: DEFAULT_EXCLUDED_FOLDERS,
   requirePreviewBeforeInsert: true,
+  suggestionProvider: "smart-connections",
 };
 
 export class SemanticGraphBuilderSettingTab extends PluginSettingTab {
@@ -23,6 +24,21 @@ export class SemanticGraphBuilderSettingTab extends PluginSettingTab {
     containerEl.empty();
 
     containerEl.createEl("h2", { text: "Semantic Graph Builder" });
+
+    new Setting(containerEl)
+      .setName("Suggestion provider")
+      .setDesc("Use Smart Connections semantic relationships when available, or use local keyword overlap.")
+      .addDropdown((dropdown) =>
+        dropdown
+          .addOption("smart-connections", "Smart Connections, fallback to local")
+          .addOption("local", "Local keyword overlap")
+          .setValue(this.plugin.settings.suggestionProvider)
+          .onChange(async (value) => {
+            this.plugin.settings.suggestionProvider =
+              value === "local" ? "local" : "smart-connections";
+            await this.plugin.saveSettings();
+          })
+      );
 
     new Setting(containerEl)
       .setName("Minimum similarity score")

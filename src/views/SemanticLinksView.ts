@@ -9,11 +9,12 @@ import {
 import type SemanticGraphBuilderPlugin from "../../main";
 import { prepareSemanticLinksUpdate } from "../linkWriter";
 import { PreviewModal } from "../modals/PreviewModal";
+import { getSuggestionResult } from "../providers";
 import { VaultScanner } from "../scanner";
-import { SuggestionEngine } from "../suggestionEngine";
 import type {
   ScannedNote,
   SemanticLinkSuggestion,
+  SuggestionResult,
   VaultScanResult,
 } from "../types";
 
@@ -80,20 +81,27 @@ export class SemanticLinksView extends ItemView {
       const activeNoteExcluded = activeFile
         ? scanner.isPathExcluded(activeFile.path)
         : false;
-      const suggestions = activeNote
-        ? new SuggestionEngine(this.plugin.settings).getSuggestions(
+      const suggestionResult = activeNote
+        ? await getSuggestionResult(
+            this.app,
+            this.plugin.settings,
             activeNote,
             result.notes
           )
-        : [];
-      this.pruneSelection(suggestions);
+        : null;
+
+      if (requestId !== this.scanRequestId) {
+        return;
+      }
+
+      this.pruneSelection(suggestionResult?.suggestions ?? []);
 
       this.renderScanResult(
         result,
         activeFile,
         activeNote,
         activeNoteExcluded,
-        suggestions
+        suggestionResult
       );
     } catch (error) {
       const message =
@@ -121,8 +129,9 @@ export class SemanticLinksView extends ItemView {
     activeFile: TFile | null,
     activeNote: ScannedNote | null,
     activeNoteExcluded: boolean,
-    suggestions: SemanticLinkSuggestion[]
+    suggestionResult: SuggestionResult | null
   ): void {
+    const suggestions = suggestionResult?.suggestions ?? [];
     this.contentEl.empty();
     this.contentEl.addClass("semantic-links-view");
 
@@ -168,7 +177,7 @@ export class SemanticLinksView extends ItemView {
     }
 
     if (activeNote && !activeNoteExcluded) {
-      this.renderSuggestions(suggestions);
+      this.renderSuggestions(suggestions, suggestionResult);
     }
 
     const actionEl = this.contentEl.createDiv({
@@ -194,7 +203,10 @@ export class SemanticLinksView extends ItemView {
     });
   }
 
-  private renderSuggestions(suggestions: SemanticLinkSuggestion[]): void {
+  private renderSuggestions(
+    suggestions: SemanticLinkSuggestion[],
+    suggestionResult: SuggestionResult | null
+  ): void {
     const sectionEl = this.contentEl.createDiv({
       cls: "semantic-links-view__suggestions",
     });
@@ -206,6 +218,19 @@ export class SemanticLinksView extends ItemView {
       cls: "semantic-links-view__selected-count",
     });
     this.updateSelectedCount(selectedCountEl);
+
+    if (suggestionResult) {
+      const providerText =
+        suggestionResult.provider === "smart-connections"
+          ? "Smart Connections semantic search"
+          : "Local keyword overlap";
+      sectionEl.createDiv({
+        cls: "semantic-links-view__provider",
+        text: suggestionResult.fallbackUsed
+          ? `Using ${providerText} fallback. ${suggestionResult.message ?? ""}`.trim()
+          : `Using ${providerText}.`,
+      });
+    }
 
     if (suggestions.length === 0) {
       sectionEl.createDiv({
@@ -275,6 +300,13 @@ export class SemanticLinksView extends ItemView {
     titleRowEl.createDiv({
       cls: "semantic-links-suggestion__score",
       text: suggestion.score.toFixed(2),
+    });
+    bodyEl.createDiv({
+      cls: "semantic-links-suggestion__provider",
+      text:
+        suggestion.provider === "smart-connections"
+          ? "Smart Connections semantic score"
+          : "Local keyword overlap score",
     });
     bodyEl.createDiv({
       cls: "semantic-links-suggestion__path",

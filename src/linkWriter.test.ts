@@ -111,6 +111,7 @@ function suggestion(path: string, title: string): SemanticLinkSuggestion {
     title,
     score: 0.5,
     sharedTerms: [],
+    provider: "local",
     selected: false,
   };
 }
