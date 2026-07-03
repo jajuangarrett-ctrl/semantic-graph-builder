@@ -3,9 +3,9 @@ import {
   ItemView,
   MarkdownView,
   Notice,
+  TFile,
   WorkspaceLeaf,
 } from "obsidian";
-import type { TFile } from "obsidian";
 import type SemanticGraphBuilderPlugin from "../../main";
 import { prepareSemanticLinksUpdate } from "../linkWriter";
 import { PreviewModal } from "../modals/PreviewModal";
@@ -23,6 +23,7 @@ export class SemanticLinksView extends ItemView {
   plugin: SemanticGraphBuilderPlugin;
   private scanRequestId = 0;
   private activeNotePath = "";
+  private currentMarkdownFilePath = "";
   private selectedSuggestionPaths = new Set<string>();
 
   constructor(leaf: WorkspaceLeaf, plugin: SemanticGraphBuilderPlugin) {
@@ -44,8 +45,11 @@ export class SemanticLinksView extends ItemView {
 
   async onOpen(): Promise<void> {
     this.registerEvent(
-      this.app.workspace.on("active-leaf-change", () => {
-        void this.render();
+      this.app.workspace.on("file-open", (file) => {
+        if (file?.extension === "md") {
+          this.currentMarkdownFilePath = file.path;
+          void this.render();
+        }
       })
     );
     await this.render();
@@ -405,10 +409,25 @@ export class SemanticLinksView extends ItemView {
       this.app.workspace.getActiveViewOfType(MarkdownView);
 
     if (activeMarkdownView?.file) {
+      this.currentMarkdownFilePath = activeMarkdownView.file.path;
       return activeMarkdownView.file;
     }
 
     const activeFile = this.app.workspace.getActiveFile();
-    return activeFile?.extension === "md" ? activeFile : null;
+
+    if (activeFile?.extension === "md") {
+      this.currentMarkdownFilePath = activeFile.path;
+      return activeFile;
+    }
+
+    if (!this.currentMarkdownFilePath) {
+      return null;
+    }
+
+    const rememberedFile = this.app.vault.getAbstractFileByPath(
+      this.currentMarkdownFilePath
+    );
+
+    return rememberedFile instanceof TFile ? rememberedFile : null;
   }
 }
