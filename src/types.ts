@@ -1,6 +1,7 @@
 import type { TFile } from "obsidian";
 
 export type SuggestionProvider = "smart-connections" | "local";
+export type ExistingSemanticLinkStatus = "already-in-block" | "already-in-note";
 
 export interface SemanticGraphBuilderSettings {
   minimumSimilarityScore: number;
@@ -33,6 +34,7 @@ export interface SemanticLinkSuggestion {
   score: number;
   sharedTerms: string[];
   provider: SuggestionProvider;
+  existingLinkStatus?: ExistingSemanticLinkStatus;
   selected: boolean;
 }
 

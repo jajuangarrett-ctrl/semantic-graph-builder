@@ -93,6 +93,11 @@
   border-color: var(--interactive-accent);
 }
 
+.semantic-links-suggestion.is-linked {
+  background: var(--background-secondary);
+  border-color: var(--background-modifier-border-hover);
+}
+
 .semantic-links-suggestion__checkbox {
   flex: 0 0 auto;
   margin-top: 3px;
@@ -125,11 +130,17 @@
 
 .semantic-links-suggestion__path,
 .semantic-links-suggestion__provider,
+.semantic-links-suggestion__status,
 .semantic-links-suggestion__terms {
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
   margin-top: 4px;
   overflow-wrap: anywhere;
+}
+
+.semantic-links-suggestion__status {
+  color: var(--text-success);
+  font-weight: 600;
 }
 
 .semantic-links-view__actions {

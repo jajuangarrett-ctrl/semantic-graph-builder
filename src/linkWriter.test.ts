@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { prepareSemanticLinksUpdate } from "./linkWriter";
+import {
+  getExistingSemanticLinkStatus,
+  prepareSemanticLinksUpdate,
+} from "./linkWriter";
 import type { SemanticLinkSuggestion } from "./types";
 
 describe("prepareSemanticLinksUpdate", () => {
@@ -102,6 +105,36 @@ describe("prepareSemanticLinksUpdate", () => {
     expect(result.changed).toBe(false);
     expect(result.blockedReason).toContain("without a matching end marker");
     expect(result.updatedContent).toBe(content);
+  });
+
+  it("detects when a suggestion already exists in the semantic links block", () => {
+    const content = [
+      "<!-- semantic-links:start -->",
+      "",
+      "### Related Notes",
+      "",
+      "* [[Programs/Student Equity|Student Equity]]",
+      "",
+      "<!-- semantic-links:end -->",
+    ].join("\n");
+
+    expect(
+      getExistingSemanticLinkStatus(
+        content,
+        suggestion("Programs/Student Equity.md", "Student Equity")
+      )
+    ).toBe("already-in-block");
+  });
+
+  it("detects when a suggestion is already linked elsewhere in the note", () => {
+    const content = "This connects to [[Student Equity]] work.";
+
+    expect(
+      getExistingSemanticLinkStatus(
+        content,
+        suggestion("Programs/Student Equity.md", "Student Equity")
+      )
+    ).toBe("already-in-note");
   });
 });
 

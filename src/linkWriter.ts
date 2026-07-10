@@ -1,4 +1,7 @@
-import type { SemanticLinkSuggestion } from "./types";
+import type {
+  ExistingSemanticLinkStatus,
+  SemanticLinkSuggestion,
+} from "./types";
 
 export const SEMANTIC_LINKS_START = "<!-- semantic-links:start -->";
 export const SEMANTIC_LINKS_END = "<!-- semantic-links:end -->";
@@ -150,6 +153,38 @@ export function entryFromSuggestion(
     target,
     wikilink: formatWikilink(target, suggestion.title),
   };
+}
+
+export function getExistingSemanticLinkStatus(
+  content: string,
+  suggestion: Pick<SemanticLinkSuggestion, "title" | "path">
+): ExistingSemanticLinkStatus | null {
+  const existingBlock = findSemanticLinksBlock(content);
+  const outsideContent = existingBlock
+    ? `${content.slice(0, existingBlock.startIndex)}${content.slice(
+        existingBlock.endIndex
+      )}`
+    : content;
+  const outsideLinkKeys = extractLinkKeys(outsideContent);
+  const blockLinkKeys = existingBlock
+    ? extractLinkKeys(existingBlock.markdown).reduce((keys, link) => {
+        addKeys(keys, link.keys);
+
+        return keys;
+      }, new Set<string>())
+    : new Set<string>();
+  const entry = entryFromSuggestion(suggestion);
+  const candidateKeys = linkKeys(entry.target);
+
+  if (hasAnyKey(blockLinkKeys, candidateKeys)) {
+    return "already-in-block";
+  }
+
+  if (hasAnyKey(outsideLinkKeys, candidateKeys)) {
+    return "already-in-note";
+  }
+
+  return null;
 }
 
 function findSemanticLinksBlock(content: string): ExistingSemanticBlock | null {

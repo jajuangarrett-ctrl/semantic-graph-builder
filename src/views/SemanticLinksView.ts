@@ -7,7 +7,10 @@ import {
   WorkspaceLeaf,
 } from "obsidian";
 import type SemanticGraphBuilderPlugin from "../../main";
-import { prepareSemanticLinksUpdate } from "../linkWriter";
+import {
+  getExistingSemanticLinkStatus,
+  prepareSemanticLinksUpdate,
+} from "../linkWriter";
 import { PreviewModal } from "../modals/PreviewModal";
 import { getSuggestionResult } from "../providers";
 import { VaultScanner } from "../scanner";
@@ -26,6 +29,7 @@ export class SemanticLinksView extends ItemView {
   private activeNotePath = "";
   private currentMarkdownFilePath = "";
   private selectedSuggestionPaths = new Set<string>();
+  private alreadyLinkedSuggestionCount = 0;
 
   constructor(leaf: WorkspaceLeaf, plugin: SemanticGraphBuilderPlugin) {
     super(leaf);
@@ -81,7 +85,7 @@ export class SemanticLinksView extends ItemView {
       const activeNoteExcluded = activeFile
         ? scanner.isPathExcluded(activeFile.path)
         : false;
-      const suggestionResult = activeNote
+      let suggestionResult = activeNote
         ? await getSuggestionResult(
             this.app,
             this.plugin.settings,
@@ -92,6 +96,18 @@ export class SemanticLinksView extends ItemView {
 
       if (requestId !== this.scanRequestId) {
         return;
+      }
+
+      if (activeNote && suggestionResult) {
+        suggestionResult = {
+          ...suggestionResult,
+          suggestions: suggestionResult.suggestions.map((suggestion) => ({
+            ...suggestion,
+            existingLinkStatus:
+              getExistingSemanticLinkStatus(activeNote.content, suggestion) ??
+              undefined,
+          })),
+        };
       }
 
       this.pruneSelection(suggestionResult?.suggestions ?? []);
@@ -207,6 +223,9 @@ export class SemanticLinksView extends ItemView {
     suggestions: SemanticLinkSuggestion[],
     suggestionResult: SuggestionResult | null
   ): void {
+    this.alreadyLinkedSuggestionCount = suggestions.filter((suggestion) =>
+      Boolean(suggestion.existingLinkStatus)
+    ).length;
     const sectionEl = this.contentEl.createDiv({
       cls: "semantic-links-view__suggestions",
     });
@@ -268,15 +287,21 @@ export class SemanticLinksView extends ItemView {
     const suggestionEl = containerEl.createDiv({
       cls: "semantic-links-suggestion",
     });
-    const isSelected = this.selectedSuggestionPaths.has(suggestion.path);
+    const alreadyLinked = Boolean(suggestion.existingLinkStatus);
+    const isSelected =
+      !alreadyLinked && this.selectedSuggestionPaths.has(suggestion.path);
     suggestionEl.classList.toggle("is-selected", isSelected);
+    suggestionEl.classList.toggle("is-linked", alreadyLinked);
 
     const checkbox = suggestionEl.createEl("input", {
       cls: "semantic-links-suggestion__checkbox",
     }) as HTMLInputElement;
     checkbox.type = "checkbox";
-    checkbox.checked = isSelected;
-    checkbox.ariaLabel = `Select ${suggestion.title}`;
+    checkbox.checked = alreadyLinked || isSelected;
+    checkbox.disabled = alreadyLinked;
+    checkbox.ariaLabel = alreadyLinked
+      ? `${suggestion.title} is already linked`
+      : `Select ${suggestion.title}`;
     checkbox.addEventListener("change", () => {
       this.setSuggestionSelected(
         suggestion.path,
@@ -312,6 +337,16 @@ export class SemanticLinksView extends ItemView {
       cls: "semantic-links-suggestion__path",
       text: suggestion.path,
     });
+
+    if (suggestion.existingLinkStatus) {
+      bodyEl.createDiv({
+        cls: "semantic-links-suggestion__status",
+        text:
+          suggestion.existingLinkStatus === "already-in-block"
+            ? "Already in Related Notes"
+            : "Already linked elsewhere in this note",
+      });
+    }
 
     if (suggestion.sharedTerms.length > 0) {
       bodyEl.createDiv({
@@ -396,7 +431,14 @@ export class SemanticLinksView extends ItemView {
   }
 
   private updateSelectedCount(containerEl: HTMLElement): void {
-    containerEl.setText(`${this.selectedSuggestionPaths.size} selected`);
+    const alreadyLinkedText =
+      this.alreadyLinkedSuggestionCount > 0
+        ? `, ${this.alreadyLinkedSuggestionCount} already linked`
+        : "";
+
+    containerEl.setText(
+      `${this.selectedSuggestionPaths.size} selected${alreadyLinkedText}`
+    );
   }
 
   private resetSelectionWhenActiveNoteChanges(activePath: string): void {
@@ -409,10 +451,14 @@ export class SemanticLinksView extends ItemView {
   }
 
   private pruneSelection(suggestions: SemanticLinkSuggestion[]): void {
-    const visiblePaths = new Set(suggestions.map((suggestion) => suggestion.path));
+    const visibleSelectablePaths = new Set(
+      suggestions
+        .filter((suggestion) => !suggestion.existingLinkStatus)
+        .map((suggestion) => suggestion.path)
+    );
 
     for (const selectedPath of Array.from(this.selectedSuggestionPaths)) {
-      if (!visiblePaths.has(selectedPath)) {
+      if (!visibleSelectablePaths.has(selectedPath)) {
         this.selectedSuggestionPaths.delete(selectedPath);
       }
     }
