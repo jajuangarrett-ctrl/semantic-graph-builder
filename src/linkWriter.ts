@@ -167,11 +167,7 @@ export function getExistingSemanticLinkStatus(
     : content;
   const outsideLinkKeys = extractLinkKeys(outsideContent);
   const blockLinkKeys = existingBlock
-    ? extractLinkKeys(existingBlock.markdown).reduce((keys, link) => {
-        addKeys(keys, link.keys);
-
-        return keys;
-      }, new Set<string>())
+    ? extractLinkKeys(existingBlock.markdown)
     : new Set<string>();
   const entry = entryFromSuggestion(suggestion);
   const candidateKeys = linkKeys(entry.target);
